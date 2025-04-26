@@ -1,0 +1,291 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}HealthConnect - Espace Médecin-Patient{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient/doctor_patient_space.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Topbar (Header fixe) -->
+<div class="topbar">
+    <div class="topbar-logo">
+        <a href="{{ url_for('index') }}" class="logo-link">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HealthConnect Logo">
+            <span>HealthConnect</span>
+        </a>
+    </div>
+
+    <div class="topbar-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Rechercher...">
+    </div>
+
+    <div class="topbar-actions">
+        <div class="topbar-notification">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge">3</span>
+        </div>
+
+        <div class="topbar-profile">
+            <a href="{{ url_for('patient.profile') }}" class="profile-link">
+                <div class="profile-avatar">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Avatar">
+                </div>
+                <span class="profile-name">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="logout-button">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+
+    <!-- Bouton menu mobile -->
+    <button id="mobile-menu-toggle" class="d-md-none">
+        <i class="fas fa-bars"></i>
+    </button>
+</div>
+
+<div class="dashboard-container">
+    <!-- Sidebar (Menu latéral) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Menu</span>
+            <button id="sidebar-toggle" class="sidebar-toggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-category">SANTÉ</div>
+            <a href="{{ url_for('patient.dashboard') }}" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span class="menu-text">Accueil</span>
+            </a>
+            <a href="{{ url_for('patient.find_doctor') }}" class="menu-item">
+                <i class="fas fa-user-md"></i>
+                <span class="menu-text">Trouver un Médecin</span>
+            </a>
+            <a href="{{ url_for('patient.appointments') }}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="menu-text">Mes Rendez-vous</span>
+            </a>
+            <a href="{{ url_for('patient.doctor_patient_space') }}" class="menu-item active">
+                <i class="fas fa-comments"></i>
+                <span class="menu-text">Espace Médecin-Patient</span>
+            </a>
+
+            <div class="menu-category">SUIVI</div>
+            <a href="#" class="menu-item">
+                <i class="fas fa-heartbeat"></i>
+                <span class="menu-text">Suivi Santé</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-pills"></i>
+                <span class="menu-text">Médicaments</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-file-medical"></i>
+                <span class="menu-text">Documents Médicaux</span>
+            </a>
+
+            <div class="menu-category">RESSOURCES</div>
+            <a href="#" class="menu-item">
+                <i class="fas fa-book-medical"></i>
+                <span class="menu-text">Bibliothèque Santé</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-question-circle"></i>
+                <span class="menu-text">Aide & Support</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="#" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span class="menu-text">Paramètres</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-text">Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content (Zone principale) -->
+    <div id="main-content" class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Espace Médecin-Patient</h1>
+            <p class="page-subtitle">Gérez vos consultations et communiquez avec vos médecins</p>
+        </div>
+
+        <div class="dashboard-content">
+            <h2 class="section-title">Consultations à venir</h2>
+
+            {% if upcoming_appointments %}
+            <div class="doctor-patient-container">
+                {% for appointment in upcoming_appointments %}
+                <div class="appointment-card">
+                    <div class="appointment-header">
+                        <h3>Consultation Vidéo</h3>
+                        <span class="appointment-date">{{ appointment.date_time.strftime('%d/%m/%Y à %H:%M') }}</span>
+                    </div>
+                    <div class="appointment-body">
+                        <div class="doctor-info">
+                            <div class="doctor-avatar">
+                                {% if appointment.doctor.profile_picture %}
+                                <img src="{{ url_for('static', filename=appointment.doctor.profile_picture.replace('\\', '/')) }}" alt="Doctor">
+                                {% else %}
+                                <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Doctor">
+                                {% endif %}
+                            </div>
+                            <div class="doctor-details">
+                                <div class="doctor-name">Dr. {{ appointment.doctor.user.first_name }} {{ appointment.doctor.user.last_name }}</div>
+                                <div class="doctor-specialty">{{ appointment.doctor.speciality }}</div>
+                            </div>
+                        </div>
+
+                        <div class="appointment-details">
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detail-text">
+                                    <strong>Temps restant:</strong>
+                                    <span class="appointment-countdown" data-time="{{ appointment.date_time.strftime('%Y-%m-%dT%H:%M:%S') }}">
+                                        Calcul en cours...
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="detail-text">
+                                    <strong>Statut:</strong>
+                                    <span class="status-badge status-accepted">Confirmé</span>
+                                </div>
+                            </div>
+                            {% if appointment.notes %}
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-sticky-note"></i>
+                                </div>
+                                <div class="detail-text">
+                                    <strong>Notes:</strong> {{ appointment.notes }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="appointment-actions">
+                            {% if appointment.video_room_id %}
+                            <a href="{{ url_for('video_room', room_id=appointment.video_room_id) }}"
+                               class="btn-action btn-primary join-consultation-btn {% if (appointment.date_time - now).total_seconds() > 600 %}disabled{% endif %}"
+                               data-room-id="{{ appointment.video_room_id }}"
+                               data-appointment-id="{{ appointment.id }}">
+                                <i class="fas fa-video"></i> Rejoindre la consultation
+                                <span class="room-id-badge" title="ID de salle vidéo">{{ appointment.video_room_id }}</span>
+                            </a>
+                            {% else %}
+                            <a href="#" class="btn-action btn-secondary disabled">
+                                <i class="fas fa-video"></i> Lien non disponible
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('patient.cancel_appointment', appointment_id=appointment.id) }}" class="btn-action btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?');">
+                                <i class="fas fa-times"></i> Annuler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <p>Vous n'avez aucune consultation à venir</p>
+                <a href="{{ url_for('patient.find_doctor') }}" class="btn-action btn-primary">Prendre rendez-vous</a>
+            </div>
+            {% endif %}
+
+            <div class="past-appointments">
+                <h2 class="section-title">Consultations passées</h2>
+
+                {% if past_appointments %}
+                <div class="past-appointments-list">
+                    {% for appointment in past_appointments %}
+                    <div class="past-appointment-card">
+                        <div class="past-appointment-date">
+                            <div class="past-appointment-day">{{ appointment.date_time.strftime('%d') }}</div>
+                            <div class="past-appointment-month">{{ appointment.date_time.strftime('%b') }}</div>
+                        </div>
+                        <div class="past-appointment-details">
+                            <div class="past-appointment-doctor">
+                                Dr. {{ appointment.doctor.user.first_name }} {{ appointment.doctor.user.last_name }}
+                                <span class="status-badge status-{{ appointment.status }}">
+                                    {% if appointment.status == 'completed' %}
+                                    Terminé
+                                    {% elif appointment.status == 'accepted' %}
+                                    Terminé
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="past-appointment-time">
+                                {{ appointment.date_time.strftime('%H:%M') }} - {{ appointment.doctor.speciality }}
+                            </div>
+                        </div>
+                        <div class="past-appointment-actions">
+                            <a href="#" class="btn-action btn-secondary btn-sm">
+                                <i class="fas fa-file-medical"></i> Voir prescription
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <p>Vous n'avez aucune consultation passée</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<!-- Script de notifications -->
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<!-- Script de caméra virtuelle pour les tests -->
+<script src="{{ url_for('static', filename='js/fake-camera.js') }}"></script>
+<!-- Script de l'espace médecin-patient -->
+<script src="{{ url_for('static', filename='js/patient/doctor_patient_space.js') }}"></script>
+
+<script>
+    // Activer les boutons de consultation vidéo au bon moment
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const joinButtons = document.querySelectorAll('.join-consultation-btn');
+
+        joinButtons.forEach(button => {
+            const appointmentTimeStr = button.closest('.appointment-card').querySelector('.appointment-countdown').dataset.time;
+            const appointmentTime = new Date(appointmentTimeStr);
+            const timeDiff = (appointmentTime - now) / 1000; // différence en secondes
+
+            // Activer le bouton si le rendez-vous est dans moins de 10 minutes ou a commencé il y a moins d'une heure
+            if (timeDiff <= 600 && timeDiff >= -3600) {
+                button.classList.remove('disabled');
+                console.log('Bouton activé pour le rendez-vous à', appointmentTimeStr);
+            } else {
+                button.classList.add('disabled');
+                console.log('Bouton désactivé pour le rendez-vous à', appointmentTimeStr, '(différence de', Math.round(timeDiff/60), 'minutes)');
+            }
+        });
+    });
+</script>
+{% endblock %}

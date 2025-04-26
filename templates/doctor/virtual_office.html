@@ -1,0 +1,464 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}HealthConnect - Cabinet Virtuel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/doctor/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/doctor/virtual_office.css') }}">
+{% endblock %}
+
+{% block body_attributes %}
+{% if current_appointment %}
+data-appointment-id="{{ current_appointment.id }}"
+data-patient-id="{{ current_appointment.patient.id }}"
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% include 'doctor/partials/header.html' %}
+
+<div class="dashboard-container">
+    <!-- Sidebar (Menu latéral) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Menu</span>
+            <button id="sidebar-toggle" class="sidebar-toggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-category">CLINIC</div>
+            <a href="{{ url_for('doctor.dashboard') }}" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span class="menu-text">Accueil</span>
+            </a>
+            <a href="{{ url_for('doctor.patients') }}" class="menu-item">
+                <i class="fas fa-user-injured"></i>
+                <span class="menu-text">Patients</span>
+            </a>
+            <a href="{{ url_for('doctor.virtual_office') }}" class="menu-item active">
+                <i class="fas fa-laptop-medical"></i>
+                <span class="menu-text">Cabinet Virtuel</span>
+            </a>
+            <a href="{{ url_for('doctor.appointments') }}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="menu-text">Rendez-vous</span>
+            </a>
+
+            <div class="menu-category">INTERACTION</div>
+            <a href="{{ url_for('doctor.smart_agenda') }}" class="menu-item">
+                <i class="fas fa-calendar-check"></i>
+                <span class="menu-text">Agenda Intelligent</span>
+            </a>
+            <a href="{{ url_for('doctor.waiting_room') }}" class="menu-item">
+                <i class="fas fa-hourglass-half"></i>
+                <span class="menu-text">File d'Attente</span>
+            </a>
+
+            <div class="menu-category">RÉSEAU COLLABORATIF</div>
+            <a href="{{ url_for('doctor.medical_network') }}" class="menu-item">
+                <i class="fas fa-user-md"></i>
+                <span class="menu-text">Réseau Médical</span>
+            </a>
+            <a href="{{ url_for('doctor.hospital_references') }}" class="menu-item">
+                <i class="fas fa-hospital"></i>
+                <span class="menu-text">Références Hospitalières</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('doctor.settings') }}" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span class="menu-text">Paramètres</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-text">Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content (Zone principale) -->
+    <div id="main-content" class="main-content">
+        <div class="virtual-office-container">
+            <!-- Onglets de navigation -->
+            <div class="consultation-tabs">
+                <div class="tab-item active" data-tab="all-calls">All calls</div>
+                <div class="tab-item" data-tab="video-call">Video call</div>
+                <div class="tab-item" data-tab="lab-results">Lab results</div>
+            </div>
+
+            <!-- Conteneur pour les onglets -->
+            <div class="tab-content">
+                <!-- Onglet "All calls" -->
+                <div class="tab-pane active" id="all-calls">
+                    <div class="all-calls-container">
+                        <div class="section-header">
+                            <h2>Consultations du jour - {{ today_date }}</h2>
+                            <div class="section-actions">
+                                <button class="refresh-btn">
+                                    <i class="fas fa-sync-alt"></i> Rafraîchir
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="appointments-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Heure</th>
+                                        <th>Patient</th>
+                                        <th>Âge</th>
+                                        <th>Genre</th>
+                                        <th>Motif</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if today_appointments %}
+                                        {% for appointment in today_appointments %}
+                                        <tr>
+                                            <td>{{ appointment.date_time.strftime('%H:%M') }}</td>
+                                            <td>{{ appointment.patient.user.first_name }} {{ appointment.patient.user.last_name }}</td>
+                                            <td>{{ appointment.patient.age if appointment.patient.age else 'N/A' }}</td>
+                                            <td>{{ appointment.patient.gender if appointment.patient.gender else 'N/A' }}</td>
+                                            <td>{{ appointment.reason if appointment.reason else 'Consultation' }}</td>
+                                            <td>
+                                                <span class="status-badge status-{{ appointment.status }}">
+                                                    {% if appointment.status == 'pending' %}
+                                                        En attente
+                                                    {% elif appointment.status == 'accepted' %}
+                                                        Confirmé
+                                                    {% elif appointment.status == 'completed' %}
+                                                        Terminé
+                                                    {% elif appointment.status == 'cancelled' %}
+                                                        Annulé
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if appointment.status == 'accepted' %}
+                                                    {% set now = current_time %}
+                                                    {% set time_diff = (appointment.date_time - now).total_seconds() %}
+                                                    {% if time_diff <= 600 and time_diff >= -3600 %}
+                                                        <a href="#" class="btn-action btn-primary start-consultation" data-appointment-id="{{ appointment.id }}">
+                                                            <i class="fas fa-video"></i> Consulter
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="#" class="btn-action btn-secondary disabled">
+                                                            <i class="fas fa-video"></i> Consulter
+                                                        </a>
+                                                    {% endif %}
+                                                {% elif appointment.status == 'pending' %}
+                                                    <a href="{{ url_for('doctor.accept_appointment', appointment_id=appointment.id) }}" class="btn-action btn-success">
+                                                        <i class="fas fa-check"></i> Accepter
+                                                    </a>
+                                                    <a href="{{ url_for('doctor.reject_appointment', appointment_id=appointment.id) }}" class="btn-action btn-danger">
+                                                        <i class="fas fa-times"></i> Refuser
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="empty-state">
+                                                <i class="fas fa-calendar-times"></i>
+                                                <p>Aucun rendez-vous pour aujourd'hui</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet "Video call" -->
+                <div class="tab-pane" id="video-call">
+                    <!-- Informations du patient et zone de consultation -->
+                    <div class="patient-consultation-area">
+                        <!-- En-tête avec informations patient -->
+                        <div class="patient-header">
+                            <div class="patient-main-info">
+                                <div class="patient-label">Patient</div>
+                                <h2 class="patient-name" id="current-patient-name"
+                                    {% if current_appointment %}
+                                        data-patient-id="{{ current_appointment.patient.id }}"
+                                        data-room-id="{{ current_appointment.video_room_id }}"
+                                        data-appointment-id="{{ current_appointment.id }}"
+                                    {% endif %}>
+                                    {% if current_appointment %}
+                                        {{ current_appointment.patient.user.first_name }} {{ current_appointment.patient.user.last_name }}
+                                        {% if current_appointment.video_room_id %}
+                                        <span class="room-id-badge" title="ID de salle vidéo">
+                                            <i class="fas fa-video"></i> {{ current_appointment.video_room_id }}
+                                        </span>
+                                        {% endif %}
+                                    {% else %}
+                                        Sélectionnez un patient
+                                    {% endif %}
+                                </h2>
+                                <button class="schedule-btn">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Planifier un prochain rendez-vous
+                                </button>
+                            </div>
+
+                            <div class="patient-details-grid" id="patient-details">
+                                {% if current_appointment %}
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">Genre</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.patient.gender if current_appointment.patient.gender else 'Non spécifié' }}
+                                    </div>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">Groupe sanguin</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.patient.blood_type if current_appointment.patient.blood_type else 'Non spécifié' }}
+                                    </div>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">Spécialité</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.doctor.specialty if current_appointment.doctor.specialty else 'Médecine générale' }}
+                                    </div>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">Âge</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.patient.age if current_appointment.patient.age else 'Non spécifié' }}
+                                    </div>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">Date du rendez-vous</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.date_time.strftime('%d/%m/%Y à %H:%M') }}
+                                    </div>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <div class="detail-label">ID Patient</div>
+                                    <div class="detail-value">
+                                        {{ current_appointment.patient.patient_id if current_appointment.patient.patient_id else 'Non spécifié' }}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="empty-state">
+                                    <p>Sélectionnez un patient dans l'onglet "All calls" pour commencer une consultation</p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="consultation-actions">
+                                <button class="action-btn patient-chat-btn active">Chat patient</button>
+                                <button class="action-btn doctor-notes-btn">Notes médecin</button>
+                            </div>
+                        </div>
+
+                        <!-- Zone principale de consultation -->
+                        <div class="consultation-main-area">
+                            <!-- Zone vidéo -->
+                            <div class="video-consultation-area">
+                                <div class="video-container">
+                                    {% if current_appointment %}
+                                    <div class="record-indicator">
+                                        <i class="fas fa-circle"></i> REC
+                                    </div>
+
+                                    <!-- Vidéo principale (patient) -->
+                                    <div class="main-video-stream">
+                                        <div class="video-placeholder" id="patient-video-placeholder">
+                                            <i class="fas fa-video"></i>
+                                            <p>En attente de la connexion du patient...</p>
+                                        </div>
+                                        <video id="patient-video" autoplay playsinline style="display: none;"></video>
+                                    </div>
+
+                                    <!-- Vidéo du médecin (petite fenêtre) -->
+                                    <div class="doctor-video-stream">
+                                        <div class="video-placeholder" id="doctor-video-placeholder">
+                                            <i class="fas fa-video"></i>
+                                            <p>Cliquez sur "Démarrer" pour activer votre caméra</p>
+                                        </div>
+                                        <video id="doctor-video" autoplay muted playsinline style="display: none;"></video>
+                                    </div>
+
+                                    <!-- Indicateurs vitaux -->
+                                    <div class="vital-signs">
+                                        <div class="vital-sign heart-rate">
+                                            <i class="fas fa-heartbeat"></i>
+                                            <span>
+                                                {% if current_appointment and current_appointment.patient.vital_signs and current_appointment.patient.vital_signs.heart_rate %}
+                                                    {{ current_appointment.patient.vital_signs.heart_rate }} bpm
+                                                {% else %}
+                                                    74 bpm
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="vital-sign blood-pressure">
+                                            <i class="fas fa-tint"></i>
+                                            <span>
+                                                {% if current_appointment and current_appointment.patient.vital_signs and current_appointment.patient.vital_signs.blood_pressure %}
+                                                    {{ current_appointment.patient.vital_signs.blood_pressure }}
+                                                {% else %}
+                                                    120/80 mmHg
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contrôles vidéo -->
+                                    <div class="video-controls">
+                                        <button class="video-control-btn" id="toggle-mic">
+                                            <i class="fas fa-microphone"></i>
+                                        </button>
+                                        <button class="video-control-btn" id="toggle-video">
+                                            <i class="fas fa-video"></i>
+                                        </button>
+                                        <button class="video-control-btn" id="toggle-screen">
+                                            <i class="fas fa-desktop"></i>
+                                        </button>
+                                        <button class="video-control-btn end-call" id="end-call">
+                                            <i class="fas fa-phone-slash"></i>
+                                        </button>
+
+                                        {% if current_appointment and current_appointment.video_room_id %}
+                                        <button id="start-consultation" class="join-consultation-btn">
+                                            <i class="fas fa-play"></i> Démarrer la consultation
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-video-slash"></i>
+                                        <p>Aucune consultation en cours</p>
+                                        <p>Sélectionnez un patient dans l'onglet "All calls" pour commencer une consultation</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Chat et notes -->
+                                <div class="consultation-sidebar">
+                                    <div class="chat-container active">
+                                        <div class="chat-messages" id="chat-messages">
+                                            <!-- Les messages seront ajoutés dynamiquement -->
+                                        </div>
+
+                                        <div class="chat-input">
+                                            <input type="text" id="chat-input" placeholder="Tapez votre message...">
+                                            <button id="send-message"><i class="fas fa-paper-plane"></i></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="notes-container">
+                                        <div class="notes-form">
+                                            <textarea id="notes-content" placeholder="Saisissez vos notes médicales ici..."></textarea>
+                                            <div class="notes-actions">
+                                                <span id="notes-status" class="notes-status"></span>
+                                                <button id="save-notes" class="save-btn">Enregistrer</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Historique de traitement -->
+                            <div class="treatment-history">
+                                <div class="history-header">
+                                    <h3>Historique de traitement</h3>
+                                    <div class="history-actions">
+                                        <button class="filter-btn">
+                                            <i class="fas fa-filter"></i> Filtrer
+                                        </button>
+                                        <button class="download-btn">
+                                            <i class="fas fa-download"></i> Télécharger dossier médical
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="history-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>DATE <i class="fas fa-sort"></i></th>
+                                                <th>TYPE</th>
+                                                <th>EXAMENS</th>
+                                                <th>DIAGNOSTIC</th>
+                                                <th>PRESCRIPTIONS</th>
+                                                <th>PROCHAIN RDV</th>
+                                                <th>NOTES</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if patient_history %}
+                                                {% for history in patient_history %}
+                                                <tr>
+                                                    <td>
+                                                        <i class="far fa-calendar"></i> {{ history.appointment_date.strftime('%d/%m/%Y') if history.appointment_date else '' }}
+                                                    </td>
+                                                    <td>{{ history.appointment_type }}</td>
+                                                    <td>{{ history.procedures }}</td>
+                                                    <td>{{ history.diagnosis }}</td>
+                                                    <td>{{ history.prescriptions }}</td>
+                                                    <td>{{ history.next_appointment.strftime('%d/%m/%Y') if history.next_appointment else '' }}</td>
+                                                    <td>{{ history.doctor_notes }}</td>
+                                                    <td><i class="fas fa-ellipsis-v"></i></td>
+                                                </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="8" class="empty-state">
+                                                        <p>Aucun historique disponible pour ce patient</p>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglet "Lab results" -->
+                <div class="tab-pane" id="lab-results">
+                    <div class="lab-results-container">
+                        <div class="section-header">
+                            <h2>Résultats de laboratoire</h2>
+                        </div>
+
+                        <div class="empty-state">
+                            <i class="fas fa-flask"></i>
+                            <p>Fonctionnalité en cours de développement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<!-- Script de notifications -->
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<!-- Script de caméra virtuelle pour les tests -->
+<script src="{{ url_for('static', filename='js/fake-camera.js') }}"></script>
+<!-- Script du cabinet virtuel -->
+<script src="{{ url_for('static', filename='js/doctor/virtual_office.js') }}"></script>
+
+{% if current_appointment %}
+<script>
+    // Passer l'ID du rendez-vous et l'ID de la salle au JavaScript
+    document.body.setAttribute('data-appointment-id', '{{ current_appointment.id }}');
+    console.log('ID de rendez-vous:', '{{ current_appointment.id }}');
+    console.log('ID de salle vidéo:', '{{ current_appointment.video_room_id }}');
+</script>
+{% endif %}
+{% endblock %}

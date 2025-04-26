@@ -12,8 +12,8 @@
                 <h3>Partout, à tout moment.</h3>
                 <p>HealthConnect vous met en relation avec des professionnels de santé qualifiés pour des consultations en ligne sécurisées et efficaces.</p>
                 <div class="hero-buttons">
-                    <a href="#" class="btn btn-primary"><i class="fas fa-phone-alt"></i> Consulter un médecin maintenant</a>
-                    <a href="#" class="btn btn-secondary"><i class="fas fa-video"></i> Démarrer une vidéoconsultation</a>
+                    <a href="{{ url_for('patient.dashboard') }}" class="btn btn-primary"><i class="fas fa-phone-alt"></i> Consulter un médecin maintenant </a>
+                    <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-secondary"><i class="fas fa-video"></i> Gérer Ces Patient </a>
                 </div>
                 <div class="search-box">
                     <input type="text" placeholder="Rechercher une spécialité, un symptôme...">
@@ -82,7 +82,7 @@
                         <li><i class="fas fa-check-circle"></i> Suivre mes traitements</li>
                         <li><i class="fas fa-check-circle"></i> Espace sécurisé</li>
                     </ul>
-                    <a href="#" class="btn btn-primary">Espace Patient</a>
+                    <a href="login" class="btn btn-primary">Espace Patient</a>
                 </div>
                 <div class="user-image">
                     <img src="{{ url_for('static', filename='images/patient.png') }}" alt="Patient utilisant HealthConnect">

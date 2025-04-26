@@ -1,4 +1,6 @@
 import os
+from flask_migrate import Migrate
+
 
 class Config:
     # Secret key for session management

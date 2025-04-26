@@ -1,0 +1,290 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}HealthConnect - Tableau de bord Patient{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient/header.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Topbar (Header fixe) -->
+{% include 'patient/partials/header.html' %}
+
+<div class="dashboard-container">
+    <!-- Sidebar (Menu latéral) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Menu</span>
+            <button id="sidebar-toggle" class="sidebar-toggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-category">Santé Connectée</div>
+            <a href="#" class="menu-item active">
+                <i class="fas fa-home"></i>
+                <span class="menu-text">Accueil</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-heartbeat"></i>
+                <span class="menu-text">Guide des Capteurs</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-brain"></i>
+                <span class="menu-text">Analyse IA de Santé</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-robot"></i>
+                <span class="menu-text">Assistant Virtuel</span>
+            </a>
+
+            <div class="menu-category">Suivi Médical</div>
+            <a href="{{ url_for('patient.find_doctor') }}" class="menu-item">
+                <i class="fas fa-user-md"></i>
+                <span class="menu-text">Trouver un Médecin</span>
+            </a>
+            <a href="{{ url_for('patient.doctor_patient_space') }}" class="menu-item">
+                <i class="fas fa-comments"></i>
+                <span class="menu-text">Espace Médecin-Patient</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-chart-line"></i>
+                <span class="menu-text">Profil de Santé</span>
+            </a>
+
+            <div class="menu-category">Ressources</div>
+            <a href="#" class="menu-item">
+                <i class="fas fa-map-marked-alt"></i>
+                <span class="menu-text">Itinéraires</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-folder-open"></i>
+                <span class="menu-text">Dossier Médical</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-pills"></i>
+                <span class="menu-text">Gestion des Médicaments</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="#" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span class="menu-text">Paramètres</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-text">Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content (Zone principale) -->
+    <div id="main-content" class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Tableau de bord</h1>
+            <p class="page-subtitle">Bienvenue, {{ current_user.first_name }} {{ current_user.last_name }}</p>
+        </div>
+
+        <!-- Widgets Grid -->
+        <div class="widgets-grid">
+            <!-- Widget: Prochain Rendez-vous -->
+            <div class="widget appointment-widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Prochain Rendez-vous</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+
+                <div class="widget-content">
+                    <div class="appointment-info">
+                        <div class="doctor-avatar">
+                            <img src="{{ url_for('static', filename='images/doctor-avatar.png') }}" alt="Dr. Martin">
+                        </div>
+                        <div class="appointment-details">
+                            <h4>Dr. Martin</h4>
+                            <p>Cardiologue</p>
+                            <div class="appointment-time">
+                                <i class="far fa-clock"></i>
+                                <span>Aujourd'hui, 14:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="appointment-actions">
+                        <button class="btn-join" onclick="joinVideoConsultation('123')">
+                            <i class="fas fa-video"></i>
+                            Rejoindre
+                        </button>
+                        <button class="btn-reschedule" onclick="rescheduleAppointment('123')">
+                            Reprogrammer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="widget-footer">
+                    <span>Consultation vidéo</span>
+                    <a href="#" class="widget-link">Voir tous <i class="fas fa-chevron-right"></i></a>
+                </div>
+            </div>
+
+            <!-- Widget: Messages récents -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Messages récents</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                </div>
+
+                <div class="widget-content">
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="{{ url_for('static', filename='images/doctor-avatar.png') }}" alt="Dr. Martin">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">Dr. Martin</span>
+                                <span class="message-time">10:30</span>
+                            </div>
+                            <p class="message-text">N'oubliez pas de prendre votre tension avant notre rendez-vous.</p>
+                            <span class="message-status">Non lu</span>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="{{ url_for('static', filename='images/doctor-avatar2.png') }}" alt="Dr. Dupont">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">Dr. Dupont</span>
+                                <span class="message-time">Hier</span>
+                            </div>
+                            <p class="message-text">Vos résultats d'analyse sont disponibles. Tout est normal.</p>
+                            <span class="message-status">Lu</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-footer">
+                    <span>2 nouveaux messages</span>
+                    <a href="#" class="widget-link">Voir tous <i class="fas fa-chevron-right"></i></a>
+                </div>
+            </div>
+
+            <!-- Widget: Évolution de la santé -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Évolution de la santé</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+
+                <div class="widget-content">
+                    <div class="health-chart">
+                        <canvas id="health-chart"></canvas>
+                    </div>
+
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-tension"></div>
+                            <span>Tension</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-glycemie"></div>
+                            <span>Glycémie</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-footer">
+                    <span>Dernière mise à jour: Aujourd'hui</span>
+                    <a href="#" class="widget-link">Détails <i class="fas fa-chevron-right"></i></a>
+                </div>
+            </div>
+
+            <!-- Widget: Derniers résultats d'analyse -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Derniers résultats</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                </div>
+
+                <div class="widget-content">
+                    <div class="result-item">
+                        <span class="result-name">Cholestérol</span>
+                        <span class="result-value result-normal">5.2 mmol/L</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-name">Glycémie à jeun</span>
+                        <span class="result-value result-normal">5.0 mmol/L</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-name">Tension artérielle</span>
+                        <span class="result-value result-warning">135/85 mmHg</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-name">Hémoglobine</span>
+                        <span class="result-value result-normal">14.2 g/dL</span>
+                    </div>
+                </div>
+
+                <div class="widget-footer">
+                    <span>15/04/2023</span>
+                    <a href="#" class="widget-link">Voir tous <i class="fas fa-chevron-right"></i></a>
+                </div>
+            </div>
+
+            <!-- Widget: Dernière prescription -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Dernière prescription</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-prescription"></i>
+                    </div>
+                </div>
+
+                <div class="widget-content">
+                    <div class="prescription-info">
+                        <div class="prescription-doctor">Dr. Martin, Cardiologue</div>
+                        <div class="prescription-date">Délivrée le 10/04/2023</div>
+                    </div>
+
+                    <div class="medication-list">
+                        <div class="medication-item">
+                            <span class="medication-name">Amoxicilline</span>
+                            <span class="medication-dosage">500mg, 3x/jour</span>
+                        </div>
+                        <div class="medication-item">
+                            <span class="medication-name">Paracétamol</span>
+                            <span class="medication-dosage">1000mg, si douleur</span>
+                        </div>
+                    </div>
+
+                    <div class="prescription-qr">
+                        <img src="{{ url_for('static', filename='images/qr-code.png') }}" alt="QR Code">
+                    </div>
+                </div>
+
+                <div class="widget-footer">
+                    <span>Valable jusqu'au 10/05/2023</span>
+                    <a href="#" class="widget-link">Détails <i class="fas fa-chevron-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/patient/header.js') }}"></script>
+<script src="{{ url_for('static', filename='js/patient/dashboard.js') }}"></script>
+{% endblock %}

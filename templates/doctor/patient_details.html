@@ -1,0 +1,697 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}HealthConnect - Détails du Patient{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/doctor/dashboard.css') }}">
+<style>
+    .patient-profile {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .patient-avatar-large {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+
+    .patient-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .patient-info-large {
+        flex: 1;
+    }
+
+    .patient-name-large {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--dark-color);
+    }
+
+    .patient-details-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .patient-detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-bottom: 5px;
+    }
+
+    .detail-value {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .patient-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+        background-color: #1a5276;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: var(--transition);
+    }
+
+    .btn-outline:hover {
+        background-color: rgba(36, 113, 163, 0.1);
+    }
+
+    .patient-tabs {
+        display: flex;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 20px;
+    }
+
+    .tab-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-light);
+        border-bottom: 3px solid transparent;
+        transition: var(--transition);
+    }
+
+    .tab-item.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .medical-history {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .medical-record {
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .record-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+
+    .record-title {
+        font-weight: 600;
+        color: var(--text-color);
+        font-size: 1.1rem;
+    }
+
+    .record-date {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .record-content {
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+
+    .vital-signs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .vital-sign-card {
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+        text-align: center;
+    }
+
+    .vital-sign-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+    }
+
+    .vital-sign-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 5px;
+    }
+
+    .vital-sign-label {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .appointments-history {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .appointments-history th {
+        text-align: left;
+        padding: 12px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .appointments-history td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .appointments-history tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .status-completed {
+        background-color: rgba(88, 214, 141, 0.2);
+        color: #27ae60;
+    }
+
+    .status-upcoming {
+        background-color: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+    }
+
+    .status-cancelled {
+        background-color: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+    }
+
+    .prescriptions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .prescription-card {
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+    }
+
+    .prescription-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .prescription-date {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .prescription-content {
+        white-space: pre-line;
+        line-height: 1.6;
+    }
+
+    .attachments-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .attachment-card {
+        background-color: var(--white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .attachment-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+    }
+
+    .attachment-name {
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 5px;
+        word-break: break-word;
+    }
+
+    .attachment-size {
+        color: var(--text-light);
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+
+    .attachment-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'doctor/partials/header.html' %}
+
+<div class="dashboard-container">
+    <!-- Sidebar (Menu latéral) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Menu</span>
+            <button id="sidebar-toggle" class="sidebar-toggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-category">CLINIC</div>
+            <a href="{{ url_for('doctor.dashboard') }}" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span class="menu-text">Accueil</span>
+            </a>
+            <a href="{{ url_for('doctor.patients') }}" class="menu-item active">
+                <i class="fas fa-user-injured"></i>
+                <span class="menu-text">Patients</span>
+            </a>
+            <a href="{{ url_for('doctor.virtual_office') }}" class="menu-item">
+                <i class="fas fa-laptop-medical"></i>
+                <span class="menu-text">Cabinet Virtuel</span>
+            </a>
+            <a href="{{ url_for('doctor.appointments') }}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="menu-text">Rendez-vous</span>
+            </a>
+
+            <div class="menu-category">INTERACTION</div>
+            <a href="{{ url_for('doctor.smart_agenda') }}" class="menu-item">
+                <i class="fas fa-calendar-check"></i>
+                <span class="menu-text">Agenda Intelligent</span>
+            </a>
+            <a href="{{ url_for('doctor.waiting_room') }}" class="menu-item">
+                <i class="fas fa-hourglass-half"></i>
+                <span class="menu-text">File d'Attente</span>
+            </a>
+
+            <div class="menu-category">RÉSEAU COLLABORATIF</div>
+            <a href="{{ url_for('doctor.medical_network') }}" class="menu-item">
+                <i class="fas fa-user-md"></i>
+                <span class="menu-text">Réseau Médical</span>
+            </a>
+            <a href="{{ url_for('doctor.hospital_references') }}" class="menu-item">
+                <i class="fas fa-hospital"></i>
+                <span class="menu-text">Références Hospitalières</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('doctor.settings') }}" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span class="menu-text">Paramètres</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-text">Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content (Zone principale) -->
+    <div id="main-content" class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Dossier Patient</h1>
+            <p class="page-subtitle">Informations détaillées et historique médical</p>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="patient-profile">
+                <div class="patient-avatar-large">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Patient">
+                </div>
+                <div class="patient-info-large">
+                    <div class="patient-name-large">{{ patient.user.first_name }} {{ patient.user.last_name }}</div>
+                    <div class="patient-details-list">
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Âge</span>
+                            <span class="detail-value">{{ patient.birth_date.strftime('%d/%m/%Y') if patient.birth_date else 'Non renseigné' }}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Genre</span>
+                            <span class="detail-value">{{ patient.gender or 'Non renseigné' }}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Téléphone</span>
+                            <span class="detail-value">{{ patient.phone or 'Non renseigné' }}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ patient.user.email }}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Groupe sanguin</span>
+                            <span class="detail-value">{{ patient.blood_type or 'Non renseigné' }}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <span class="detail-label">Allergies</span>
+                            <span class="detail-value">{{ patient.allergies or 'Aucune' }}</span>
+                        </div>
+                    </div>
+                    <div class="patient-actions">
+                        <a href="{{ url_for('doctor.schedule_appointment', patient_id=patient.id) }}" class="btn-primary">
+                            <i class="fas fa-calendar-plus"></i>
+                            Programmer un rendez-vous
+                        </a>
+                        <a href="#" class="btn-outline">
+                            <i class="fas fa-comment-medical"></i>
+                            Envoyer un message
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="patient-tabs">
+                <div class="tab-item active" data-tab="info">Informations</div>
+                <div class="tab-item" data-tab="vitals">Signaux Vitaux</div>
+                <div class="tab-item" data-tab="appointments">Historique des rendez-vous</div>
+                <div class="tab-item" data-tab="prescriptions">Prescriptions</div>
+                <div class="tab-item" data-tab="attachments">Attachements</div>
+            </div>
+
+            <div id="info" class="tab-content active">
+                <div class="medical-history">
+                    <div class="medical-record">
+                        <div class="record-header">
+                            <div class="record-title">Antécédents médicaux</div>
+                        </div>
+                        <div class="record-content">
+                            <p><strong>Maladies chroniques :</strong> {{ patient.chronic_diseases or 'Aucune' }}</p>
+                            <p><strong>Médicaments actuels :</strong> {{ patient.current_medications or 'Aucun' }}</p>
+                            <p><strong>Allergies :</strong> {{ patient.allergies or 'Aucune' }}</p>
+                        </div>
+                    </div>
+                    <div class="medical-record">
+                        <div class="record-header">
+                            <div class="record-title">Informations personnelles</div>
+                        </div>
+                        <div class="record-content">
+                            <p><strong>Adresse :</strong> {{ patient.address or 'Non renseignée' }}</p>
+                            <p><strong>Numéro de sécurité sociale :</strong> {{ patient.social_security_number or 'Non renseigné' }}</p>
+                            <p><strong>Assurance :</strong> {{ patient.insurance or 'Non renseignée' }}</p>
+                        </div>
+                    </div>
+                    <div class="medical-record">
+                        <div class="record-header">
+                            <div class="record-title">Contact d'urgence</div>
+                        </div>
+                        <div class="record-content">
+                            <p><strong>Nom :</strong> {{ patient.emergency_contact_name or 'Non renseigné' }}</p>
+                            <p><strong>Téléphone :</strong> {{ patient.emergency_contact_phone or 'Non renseigné' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vitals" class="tab-content">
+                <div class="vital-signs">
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="vital-sign-value">72 bpm</div>
+                        <div class="vital-sign-label">Fréquence cardiaque</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-lungs"></i>
+                        </div>
+                        <div class="vital-sign-value">16 rpm</div>
+                        <div class="vital-sign-label">Fréquence respiratoire</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <div class="vital-sign-value">36.8°C</div>
+                        <div class="vital-sign-label">Température</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div class="vital-sign-value">120/80 mmHg</div>
+                        <div class="vital-sign-label">Tension artérielle</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-weight"></i>
+                        </div>
+                        <div class="vital-sign-value">75 kg</div>
+                        <div class="vital-sign-label">Poids</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-ruler-vertical"></i>
+                        </div>
+                        <div class="vital-sign-value">175 cm</div>
+                        <div class="vital-sign-label">Taille</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="vital-sign-value">24.5</div>
+                        <div class="vital-sign-label">IMC</div>
+                    </div>
+                    <div class="vital-sign-card">
+                        <div class="vital-sign-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="vital-sign-value">5.2 mmol/L</div>
+                        <div class="vital-sign-label">Glycémie</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="appointments" class="tab-content">
+                <table class="appointments-history">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Motif</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                        <tr>
+                            <td>{{ appointment.date_time.strftime('%d/%m/%Y à %H:%M') }}</td>
+                            <td>{{ appointment.reason or 'Non spécifié' }}</td>
+                            <td>
+                                {% if appointment.status == 'completed' %}
+                                <span class="status-badge status-completed">Terminé</span>
+                                {% elif appointment.status == 'accepted' %}
+                                <span class="status-badge status-upcoming">À venir</span>
+                                {% elif appointment.status == 'cancelled' %}
+                                <span class="status-badge status-cancelled">Annulé</span>
+                                {% else %}
+                                <span class="status-badge">{{ appointment.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('doctor.consultation', appointment_id=appointment.id) }}" class="btn-action btn-view">
+                                        <i class="fas fa-eye"></i> Voir
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="prescriptions" class="tab-content">
+                <div class="prescriptions-list">
+                    <div class="prescription-card">
+                        <div class="prescription-header">
+                            <div class="prescription-title">Prescription #1</div>
+                            <div class="prescription-date">15/04/2023</div>
+                        </div>
+                        <div class="prescription-content">
+                            <p>Amoxicilline 500mg</p>
+                            <p>1 comprimé 3 fois par jour pendant 7 jours</p>
+                            <p>À prendre pendant les repas</p>
+                        </div>
+                    </div>
+                    <div class="prescription-card">
+                        <div class="prescription-header">
+                            <div class="prescription-title">Prescription #2</div>
+                            <div class="prescription-date">02/03/2023</div>
+                        </div>
+                        <div class="prescription-content">
+                            <p>Paracétamol 1000mg</p>
+                            <p>1 comprimé toutes les 6 heures si douleur</p>
+                            <p>Ne pas dépasser 4 comprimés par jour</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="attachments" class="tab-content">
+                <div class="attachments-list">
+                    <div class="attachment-card">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="attachment-name">Résultats d'analyse sanguine</div>
+                        <div class="attachment-size">2.4 MB</div>
+                        <div class="attachment-actions">
+                            <a href="#" class="btn-primary btn-sm">
+                                <i class="fas fa-download"></i> Télécharger
+                            </a>
+                        </div>
+                    </div>
+                    <div class="attachment-card">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <div class="attachment-name">Radiographie thoracique</div>
+                        <div class="attachment-size">5.1 MB</div>
+                        <div class="attachment-actions">
+                            <a href="#" class="btn-primary btn-sm">
+                                <i class="fas fa-download"></i> Télécharger
+                            </a>
+                        </div>
+                    </div>
+                    <div class="attachment-card">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
+                        <div class="attachment-name">Électrocardiogramme</div>
+                        <div class="attachment-size">1.8 MB</div>
+                        <div class="attachment-actions">
+                            <a href="#" class="btn-primary btn-sm">
+                                <i class="fas fa-download"></i> Télécharger
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle sidebar
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+
+    sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('sidebar-collapsed');
+        mainContent.classList.toggle('main-content-expanded');
+    });
+
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+
+    mobileMenuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('sidebar-open');
+    });
+
+    // Tabs functionality
+    const tabItems = document.querySelectorAll('.tab-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+
+            // Remove active class from all tabs and contents
+            tabItems.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Add active class to current tab and content
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
